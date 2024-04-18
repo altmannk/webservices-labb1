@@ -1,4 +1,6 @@
 package se.iths.provider;
 
-public class EUR {
+import se.iths.service.CurrencyExchange;
+
+public class EUR implements CurrencyExchange {
 }
