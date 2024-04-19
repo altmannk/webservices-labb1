@@ -5,8 +5,8 @@ import se.iths.service.CurrencyExchange;
 public class EUR implements CurrencyExchange {
 
     @Override
-    public String getCurrency(double amount) {
-        return "EUR: " + String.format("%.2f", amount * 0.086);
+    public String getCurrency(double amountSEK) {
+        return "EUR: " + String.format("%.2f", amountSEK * 0.086);
     }
 
 }
