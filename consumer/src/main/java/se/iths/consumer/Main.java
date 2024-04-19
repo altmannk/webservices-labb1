@@ -61,10 +61,10 @@ public class Main {
     private static void printMenu() {
         System.out.println("""
                 \nMenu:
-                1. EUR
-                2. SKW
-                3. Print all currency
-                4. Enter new value
+                1. Euro (EUR)
+                2. South Korean won (SKW)
+                3. Show all currency
+                4. Enter new SEK amount
                 5. Exit
                 """);
     }
@@ -73,7 +73,7 @@ public class Main {
         ServiceLoader<CurrencyExchange> loader = ServiceLoader.load(CurrencyExchange.class);
         for (CurrencyExchange currencyExchange : loader) {
             if (currencyExchange.getClass().getSimpleName().equals(desiredCurrency)) {
-                System.out.println(currencyExchange.getCurrency(amountSEK));
+                System.out.printf("%s: %.1f\n", currencyExchange.getClass().getSimpleName(), currencyExchange.getCurrency(amountSEK));
                 break;
             }
         }
@@ -82,7 +82,7 @@ public class Main {
     private static void getAllCurrencyExchange(double amountSEK) {
         ServiceLoader<CurrencyExchange> loader = ServiceLoader.load(CurrencyExchange.class);
         for (CurrencyExchange currencyExchange : loader) {
-            System.out.println(currencyExchange.getCurrency(amountSEK));
+            System.out.format("%s: %.1f\n", currencyExchange.getClass().getSimpleName(), currencyExchange.getCurrency(amountSEK));
         }
     }
 
