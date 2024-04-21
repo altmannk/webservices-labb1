@@ -2,6 +2,8 @@ package se.iths.service;
 
 public interface CurrencyExchange {
 
-    double getCurrency(double amountSEK);
+    double getCurrencyAmount(double amountSEK);
+
+    String getCurrencyName();
 
 }

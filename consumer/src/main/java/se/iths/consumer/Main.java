@@ -1,145 +1,167 @@
 package se.iths.consumer;
 
 import se.iths.service.CurrencyExchange;
+import se.iths.service.annotation.Currency;
 
+import java.util.List;
+import java.util.Locale;
 import java.util.Scanner;
 import java.util.ServiceLoader;
 
 public class Main {
 
     public static void main(String[] args) {
+        Locale.setDefault(Locale.ENGLISH);
         Scanner scanner = new Scanner(System.in);
+
         System.out.println("""
                 \nWelcome!
-                This program allows you to convert Swedish Kronor (SEK) to other currencies.
+                This program allows you to convert
+                Swedish Kronor (SEK) to other currencies.
                 Now lets get started.
                 """);
 
         while (true) {
-            double amountSEK = getAmountSEK(scanner);
+            double amountSEK = promptForSEKAmount(scanner);
 
             while (true) {
-                printMenu();
-                int choiceMenu = getChoiceMenu(scanner);
+                displayMenuOptions();
+                int menuChoice = promptForMenuChoice(scanner);
 
-                switch (choiceMenu) {
+                switch (menuChoice) {
                     case 1:
-                        String desiredCurrency = userChoiceOfCurrency(scanner);
-                        double desiredCurrencyExchange = getDesiredCurrencyExchange(desiredCurrency, amountSEK);
-                        System.out.println(
-                                "\n" + amountSEK + " SEK is " +
-                                        String.format("%.1f", desiredCurrencyExchange) + " " + desiredCurrency);
+                        displayAvailableCurrencies();
+                        String inputUser = promptForCurrencyChoice(scanner);
+                        if (inputUser.equals("Q")) break;
+                        displayOneCurrencyExchange(inputUser, amountSEK);
                         break;
                     case 2:
-                        System.out.println("\n" + amountSEK + " SEK in all available currencies: ");
-                        getAllCurrencyExchange(amountSEK);
+                        displayAllCurrencyExchange(amountSEK);
                         break;
                     case 3:
                         break;
                     case 0:
+                        System.out.println("\nOkay, Bye!");
                         scanner.close();
                         System.exit(0);
                     default:
-                        throw new IllegalStateException("Unexpected value: " + choiceMenu);
+                        throw new IllegalStateException("Unexpected value: " + menuChoice);
                 }
-
-                if (choiceMenu == 3) break;
-
+                if (menuChoice == 3) break;
             }
         }
-
     }
 
-    private static void printMenu() {
+    private static void displayMenuOptions() {
         System.out.print("""
                 \nDo you want to:
                 1. Choose a specific currency
-                2. Show SEK amount in all currency
+                2. Exchange SEK in all currencies
                 3. Enter new SEK amount
                 0. Exit
                 """);
     }
 
-    private static double getAmountSEK(Scanner scanner) {
+    private static void displayAvailableCurrencies() {
+        ServiceLoader<CurrencyExchange> loader = ServiceLoader.load(CurrencyExchange.class);
+        System.out.println("\nAll available currencies: ");
+        for (CurrencyExchange currencyExchange : loader) {
+            System.out.format(
+                    "• %s (%s)\n",
+                    currencyExchange.getClass().getAnnotation(Currency.class).value(), //Currency Code
+                    currencyExchange.getCurrencyName() //Currency Name
+            );
+        }
+    }
+
+    private static double promptForSEKAmount(Scanner scanner) {
         double amountSEK;
+
         while (true) {
-            System.out.print("Enter amount in SEK: ");
+            System.out.print("How much SEK do you want to convert: ");
             try {
-                amountSEK = Double.parseDouble(scanner.nextLine());
+                amountSEK = Double.parseDouble(scanner.nextLine().replace(",", "."));
                 if (amountSEK < 0) {
-                    System.out.println("Invalid input: " + amountSEK + ". Try again.");
+                    System.out.println("Amount must be positive!");
                     continue;
                 }
                 return amountSEK;
             } catch (NumberFormatException e) {
-                System.out.println("Invalid input. Try again.");
+                System.out.println("Invalid input. Amount must be a number!");
             }
         }
     }
 
-    private static int getChoiceMenu(Scanner scanner) {
-        int choiceMenu;
+    private static int promptForMenuChoice(Scanner scanner) {
+        int menuChoice;
+
         while (true) {
-            System.out.print("Choose an option: ");
+            System.out.print("Select menu option: ");
             try {
-                choiceMenu = Integer.parseInt(scanner.nextLine());
-                if (choiceMenu < 0 || choiceMenu > 3) {
-                    System.out.println("Invalid input: " + choiceMenu + ". Try again.");
+                menuChoice = Integer.parseInt(scanner.nextLine());
+                if (menuChoice < 0 || menuChoice > 3) {
+                    System.out.println("You need to choose a number from the menu.");
                     continue;
                 }
-                return choiceMenu;
+                return menuChoice;
             } catch (NumberFormatException e) {
-                System.out.println("Invalid input. Try again.");
+                System.out.println("Invalid input. Menu option must be a number!");
             }
         }
     }
 
-    private static String userChoiceOfCurrency(Scanner scanner) {
-        System.out.println("\nAll available currencies: ");
-        showAllCurrencyNameAsAMenu();
-        System.out.print("Enter desired currency: ");
-        String desiredCurrency = scanner.nextLine().toUpperCase();
+    private static String promptForCurrencyChoice(Scanner scanner) {
+        String userInput;
 
-        if (!isValidCurrencyName(desiredCurrency)) {
-            System.out.println("Invalid currency. Try again.");
-            return userChoiceOfCurrency(scanner);
-        }
-        return desiredCurrency;
-    }
-
-    private static void showAllCurrencyNameAsAMenu() {
-        ServiceLoader<CurrencyExchange> loader = ServiceLoader.load(CurrencyExchange.class);
-        for (CurrencyExchange currencyExchange : loader) {
-            System.out.println(currencyExchange.getClass().getSimpleName());
-        }
-    }
-
-    private static boolean isValidCurrencyName(String desiredCurrency) {
-        ServiceLoader<CurrencyExchange> loader = ServiceLoader.load(CurrencyExchange.class);
-        for (CurrencyExchange currencyExchange : loader) {
-            if (currencyExchange.getClass().getSimpleName().equals(desiredCurrency)) {
-                return true;
+        while (true) {
+            System.out.print("\nChoose a currency code or 'Q' to get back to menu: ");
+            try {
+                userInput = scanner.nextLine().toUpperCase();
+                if (userInput.equals("Q")) {
+                    return "Q";
+                } else if (!isValidCurrencyCode(userInput)) {
+                    System.out.println("Invalid currency code. Try again!");
+                    continue;
+                }
+                return userInput;
+            } catch (Exception e) {
+                System.out.println("Invalid input. Try again!");
             }
         }
-        return false;
     }
 
-    private static double getDesiredCurrencyExchange(String desiredCurrency, double amountSEK) {
-        ServiceLoader<CurrencyExchange> loader = ServiceLoader.load(CurrencyExchange.class);
-        for (CurrencyExchange currencyExchange : loader) {
-            if (currencyExchange.getClass().getSimpleName().equals(desiredCurrency)) {
-                return currencyExchange.getCurrency(amountSEK);
-            }
+    private static boolean isValidCurrencyCode(String currencyCode) {
+        return loadCurrencyConverter(currencyCode).stream().findFirst().isPresent();
+    }
+
+    private static void displayOneCurrencyExchange(String currencyCode, double amount) {
+        for (CurrencyExchange converter : loadCurrencyConverter(currencyCode)) {
+            System.out.format("\nSwedish Kronor to %s:\n%.1f SEK = %.1f %s\n",
+                    converter.getCurrencyName(), //Currency Name
+                    amount, //SEK
+                    converter.getCurrencyAmount(amount), //Currency Amount
+                    converter.getClass().getAnnotation(Currency.class).value() //Currency Code
+            );
         }
-        throw new IllegalStateException("No currency exchange found for " + desiredCurrency);
     }
 
-    private static void getAllCurrencyExchange(double amountSEK) {
+    private static List<CurrencyExchange> loadCurrencyConverter(String currencyCode) {
         ServiceLoader<CurrencyExchange> loader = ServiceLoader.load(CurrencyExchange.class);
+        return loader.stream()
+                .filter(c -> c.type().isAnnotationPresent(Currency.class) &&
+                        c.type().getAnnotation(Currency.class).value().equals(currencyCode))
+                .map(ServiceLoader.Provider::get)
+                .toList();
+    }
+
+    private static void displayAllCurrencyExchange(double amount) {
+        ServiceLoader<CurrencyExchange> loader = ServiceLoader.load(CurrencyExchange.class);
+        System.out.println("\nSwedish Kronor: " + amount + " SEK in all currencies: ");
         for (CurrencyExchange currencyExchange : loader) {
-            System.out.format("%s: %.1f\n",
-                    currencyExchange.getClass().getSimpleName(),
-                    currencyExchange.getCurrency(amountSEK)
+            System.out.format("%s: %.1f %s\n",
+                    currencyExchange.getCurrencyName(),
+                    currencyExchange.getCurrencyAmount(amount),
+                    currencyExchange.getClass().getAnnotation(Currency.class).value()
             );
         }
     }
