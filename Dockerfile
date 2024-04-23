@@ -1,4 +1,4 @@
-FROM openjdk:22
+FROM eclipse-temurin:22-jre-alpine
 WORKDIR /app
 COPY ./service/target/service-1.0-SNAPSHOT.jar /app
 COPY ./provider/target/provider-1.0-SNAPSHOT.jar /app
