@@ -7,7 +7,7 @@
 
 ### IntelliJ:
 - Copy/fork project then...
-  - Go to: ***'Edit configurations/Modify options'*** and add the ***'Add dependencies with "provided" scope to classpath'***
+  - Go to: ***'Edit configurations/Modify options'*** and add <br> the ***'Add dependencies with "provided" scope to classpath'***
   - ***'Apply'*** then ***'OK'***
   - Run application
 
